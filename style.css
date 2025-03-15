@@ -61,7 +61,7 @@ body {
     height: 20px;
     background: linear-gradient(to bottom, #4CAF50, #2E7D32);
     position: absolute;
-    bottom: 20px;
+    /* bottom: 20px; を削除し、JavaScriptで制御 */
     left: 250px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
