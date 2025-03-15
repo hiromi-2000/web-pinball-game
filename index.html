@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ウェブピンボール</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="score-board">スコア: <span id="score">0</span></div>
+      <div class="game-area" id="game-area">
+        <div class="ball" id="ball"></div>
+        <div class="paddle" id="paddle"></div>
+        <!-- フリッパーやバンパーなどは JavaScript で動的に追加します -->
+      </div>
+      <div class="controls">
+        <button id="start-button">ゲーム開始</button>
+        <button id="reset-button">リセット</button>
+      </div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
