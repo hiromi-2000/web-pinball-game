@@ -7,18 +7,38 @@
     <link rel="stylesheet" href="style.css" />
     <!-- JavaScriptをdeferで読み込み -->
     <script src="script.js" defer></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   </head>
   <body>
     <div class="game-container">
-      <div class="score-board">スコア: <span id="score">0</span></div>
+      <h1 class="title">ウェブピンボール</h1>
+      
+      <div class="score-board">
+        <span>スコア:</span> <span id="score" class="score-value">0</span>
+      </div>
+      
       <div class="game-area" id="game-area">
         <div class="ball" id="ball"></div>
         <div class="paddle" id="paddle"></div>
         <!-- フリッパーやバンパーなどは JavaScript で動的に追加します -->
       </div>
+      
       <div class="controls">
-        <button id="start-button">ゲーム開始</button>
-        <button id="reset-button">リセット</button>
+        <button id="start-button"><i class="fas fa-play"></i> ゲーム開始</button>
+        <button id="reset-button"><i class="fas fa-redo"></i> リセット</button>
+      </div>
+      
+      <div class="instructions">
+        <h3><i class="fas fa-info-circle"></i> 遊び方</h3>
+        <p>マウスを左右に動かしてパドルを操作し、ボールを打ち返してください。</p>
+        <ul>
+          <li><i class="fas fa-mouse-pointer"></i> マウス: パドルを左右に移動</li>
+          <li><i class="fas fa-mobile-alt"></i> タッチ: スワイプでパドルを移動（モバイル）</li>
+          <li><i class="fas fa-keyboard"></i> キーボード: 左右矢印キーでパドル移動、スペースでゲーム開始</li>
+        </ul>
+        <p>バンパーに当たると<span class="score-value">50点</span>、壁やパドルに当たると<span class="score-value">10点</span>獲得できます。</p>
+        <p>ボールを落とさないように頑張ってください！</p>
       </div>
     </div>
   </body>
