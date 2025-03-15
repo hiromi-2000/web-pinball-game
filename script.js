@@ -254,3 +254,148 @@ function checkWallCollisions() {
     }
   });
 }
+
+// バンパーとの衝突判定
+function checkBumperCollisions() {
+  bumpers.forEach((bumper) => {
+    // バンパーの中心
+    const bumperCenterX = bumper.x + bumper.size / 2;
+    const bumperCenterY = bumper.y + bumper.size / 2;
+
+    // ボールの中心
+    const ballCenterX = ballX + ballSize / 2;
+    const ballCenterY = ballY + ballSize / 2;
+
+    // 中心間の距離
+    const dx = ballCenterX - bumperCenterX;
+    const dy = ballCenterY - bumperCenterY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // 衝突判定（円と円）
+    if (distance < bumper.size / 2 + ballSize / 2) {
+      // 衝突方向に応じて反射
+      const angle = Math.atan2(dy, dx);
+      const power = 10; // バンパーの反発力
+
+      ballSpeedX = Math.cos(angle) * power;
+      ballSpeedY = Math.sin(angle) * power;
+
+      // ボールをバンパーの外側に移動
+      const newDistance = bumper.size / 2 + ballSize / 2;
+      ballX = bumperCenterX + Math.cos(angle) * newDistance - ballSize / 2;
+      ballY = bumperCenterY + Math.sin(angle) * newDistance - ballSize / 2;
+
+      // スコア加算
+      score += 50;
+      scoreElement.textContent = score;
+
+      // バンパーを一時的に大きくする（視覚効果）
+      bumper.element.style.transform = "scale(1.2)";
+      setTimeout(() => {
+        bumper.element.style.transform = "scale(1)";
+      }, 100);
+    }
+  });
+}
+
+// パドルとの衝突判定
+function checkPaddleCollision() {
+  if (
+    ballY + ballSize >= paddleY &&
+    ballY <= paddleY + paddleHeight &&
+    ballX + ballSize >= paddleX &&
+    ballX <= paddleX + paddleWidth
+  ) {
+    // パドルとの衝突位置に応じて反射角度を変える
+    const hitPosition = ballX + ballSize / 2 - paddleX;
+    const normalizedHitPosition = hitPosition / paddleWidth; // 0～1の値
+
+    // -1～1の範囲に変換（パドルの左端で-1、中央で0、右端で1）
+    const angle = (normalizedHitPosition - 0.5) * 2;
+
+    // 反射角度と速度を設定
+    const power = 10;
+    ballSpeedX = angle * power;
+    ballSpeedY = -Math.abs(ballSpeedY) - 5;
+
+    // ボールをパドルの上に移動
+    ballY = paddleY - ballSize;
+
+    // スコア加算
+    score += 10;
+    scoreElement.textContent = score;
+  }
+}
+
+// マウス移動でパドルを操作
+gameArea.addEventListener("mousemove", (e) => {
+  const rect = gameArea.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+
+  // パドルの位置を更新（画面内に収める）
+  paddleX = Math.max(
+    0,
+    Math.min(mouseX - paddleWidth / 2, gameArea.clientWidth - paddleWidth)
+  );
+  updatePaddlePosition();
+});
+
+// タッチ操作でパドルを移動（モバイル対応）
+gameArea.addEventListener(
+  "touchmove",
+  (e) => {
+    e.preventDefault();
+    const rect = gameArea.getBoundingClientRect();
+    const touchX = e.touches[0].clientX - rect.left;
+
+    // パドルの位置を更新（画面内に収める）
+    paddleX = Math.max(
+      0,
+      Math.min(touchX - paddleWidth / 2, gameArea.clientWidth - paddleWidth)
+    );
+    updatePaddlePosition();
+  },
+  { passive: false }
+);
+
+// スタートボタンのイベントリスナー
+startButton.addEventListener("click", () => {
+  if (!gameRunning) {
+    gameRunning = true;
+
+    // ボールに初速を与える
+    ballSpeedX = Math.random() * 6 - 3;
+    ballSpeedY = -10;
+
+    // ゲームループを開始
+    gameLoop();
+  }
+});
+
+// リセットボタンのイベントリスナー
+resetButton.addEventListener("click", () => {
+  gameRunning = false;
+  initGame();
+});
+
+// ページ読み込み時にゲームを初期化
+window.addEventListener("load", initGame);
+
+// キーボード操作
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft") {
+    // 左矢印キー
+    paddleX = Math.max(0, paddleX - 20);
+    updatePaddlePosition();
+  } else if (e.key === "ArrowRight") {
+    // 右矢印キー
+    paddleX = Math.min(gameArea.clientWidth - paddleWidth, paddleX + 20);
+    updatePaddlePosition();
+  } else if (e.key === " " && !gameRunning) {
+    // スペースキーでゲーム開始
+    gameRunning = true;
+    ballSpeedX = Math.random() * 6 - 3;
+    ballSpeedY = -10;
+    gameLoop();
+  }
+});
