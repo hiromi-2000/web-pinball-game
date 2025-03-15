@@ -156,7 +156,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // パドルの位置を更新
   function updatePaddlePosition() {
     paddle.style.left = `${paddleX}px`;
-    paddle.style.bottom = `${20}px`;
+    // bottomではなくtopプロパティを使用
+    paddle.style.top = `${paddleY}px`;
   }
 
   // ゲームループ
