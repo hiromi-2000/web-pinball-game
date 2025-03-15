@@ -27,6 +27,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // バンパーの設定
   const bumpers = [];
   const walls = [];
+  
+  // パーティクルシステム
+  const particles = [];
+  const maxParticles = 50;
 
   // ゲーム初期化
   function initGame() {
@@ -55,6 +59,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ウォールを追加
     createWalls();
+    
+    // パーティクルをクリア
+    particles.length = 0;
   }
 
   // ゲーム要素をクリア
@@ -74,6 +81,14 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     walls.length = 0;
+    
+    // 既存のパーティクルを削除
+    const existingParticles = document.querySelectorAll('.particle');
+    existingParticles.forEach(particle => {
+      if (particle.parentNode) {
+        particle.parentNode.removeChild(particle);
+      }
+    });
   }
 
   // バンパーを作成
@@ -83,6 +98,10 @@ document.addEventListener('DOMContentLoaded', function() {
     createBumper(300, 150, 40);
     createBumper(200, 250, 40);
     createBumper(400, 200, 40);
+    
+    // 追加のバンパー
+    createBumper(150, 350, 30);
+    createBumper(450, 350, 30);
   }
 
   // 個別のバンパーを作成
@@ -120,6 +139,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 斜めの壁（右）
     createWall(450, 200, 100, 15, 45);
+    
+    // 追加の斜めの壁
+    createWall(100, 400, 80, 15, 30);
+    createWall(400, 400, 80, 15, -30);
   }
 
   // 個別のウォールを作成
@@ -145,6 +168,84 @@ document.addEventListener('DOMContentLoaded', function() {
       angle,
       element: wallElement,
     });
+  }
+  
+  // パーティクルを作成
+  function createParticle(x, y, color) {
+    if (particles.length > maxParticles) {
+      const oldParticle = particles.shift();
+      if (oldParticle.element && oldParticle.element.parentNode) {
+        oldParticle.element.parentNode.removeChild(oldParticle.element);
+      }
+    }
+    
+    const size = Math.random() * 5 + 2;
+    const speedX = (Math.random() - 0.5) * 5;
+    const speedY = (Math.random() - 0.5) * 5;
+    const lifetime = Math.random() * 1000 + 500;
+    
+    const particleElement = document.createElement('div');
+    particleElement.className = 'particle';
+    particleElement.style.width = `${size}px`;
+    particleElement.style.height = `${size}px`;
+    particleElement.style.backgroundColor = color;
+    particleElement.style.left = `${x}px`;
+    particleElement.style.top = `${y}px`;
+    particleElement.style.position = 'absolute';
+    particleElement.style.borderRadius = '50%';
+    particleElement.style.boxShadow = `0 0 ${size}px ${color}`;
+    particleElement.style.opacity = '1';
+    particleElement.style.zIndex = '1';
+    
+    gameArea.appendChild(particleElement);
+    
+    const particle = {
+      x,
+      y,
+      speedX,
+      speedY,
+      size,
+      element: particleElement,
+      lifetime,
+      born: Date.now()
+    };
+    
+    particles.push(particle);
+  }
+  
+  // パーティクルを更新
+  function updateParticles() {
+    const now = Date.now();
+    
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const particle = particles[i];
+      const age = now - particle.born;
+      
+      if (age > particle.lifetime) {
+        if (particle.element && particle.element.parentNode) {
+          particle.element.parentNode.removeChild(particle.element);
+        }
+        particles.splice(i, 1);
+        continue;
+      }
+      
+      // 位置を更新
+      particle.x += particle.speedX;
+      particle.y += particle.speedY;
+      
+      // 重力と摩擦を適用
+      particle.speedY += 0.1;
+      particle.speedX *= 0.99;
+      particle.speedY *= 0.99;
+      
+      // 透明度を更新
+      const opacity = 1 - (age / particle.lifetime);
+      
+      // 要素を更新
+      particle.element.style.left = `${particle.x}px`;
+      particle.element.style.top = `${particle.y}px`;
+      particle.element.style.opacity = opacity.toString();
+    }
   }
 
   // ボールの位置を更新
@@ -183,11 +284,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // パドルとの衝突判定
     checkPaddleCollision();
+    
+    // パーティクルを更新
+    updateParticles();
 
     // ボールが画面外に出たかチェック
     if (ballY > gameArea.clientHeight) {
-      gameRunning = false;
-      alert(`ゲームオーバー！\nスコア: ${score}`);
+      gameOver();
       return;
     }
 
@@ -197,6 +300,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // 次のフレームを要求
     requestAnimationFrame(gameLoop);
   }
+  
+  // ゲームオーバー処理
+  function gameOver() {
+    gameRunning = false;
+    
+    // ゲームオーバーエフェクト
+    for (let i = 0; i < 30; i++) {
+      setTimeout(() => {
+        createParticle(
+          ballX + ballSize / 2, 
+          gameArea.clientHeight - 10, 
+          '#f44336'
+        );
+      }, i * 50);
+    }
+    
+    // ゲームオーバーメッセージ
+    setTimeout(() => {
+      alert(`ゲームオーバー！\nスコア: ${score}`);
+    }, 1000);
+  }
 
   // 壁との衝突判定
   function checkWallCollisions() {
@@ -204,15 +328,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (ballX < 0) {
       ballX = 0;
       ballSpeedX = -ballSpeedX * bounce;
+      createCollisionEffect(ballX, ballY, '#9c27b0');
     } else if (ballX > gameArea.clientWidth - ballSize) {
       ballX = gameArea.clientWidth - ballSize;
       ballSpeedX = -ballSpeedX * bounce;
+      createCollisionEffect(ballX + ballSize, ballY, '#9c27b0');
     }
 
     // 上の壁
     if (ballY < 0) {
       ballY = 0;
       ballSpeedY = -ballSpeedY * bounce;
+      createCollisionEffect(ballX, ballY, '#9c27b0');
     }
 
     // カスタムウォールとの衝突
@@ -254,8 +381,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // スコア加算
         score += 10;
         scoreElement.textContent = score;
+        
+        // 衝突エフェクト
+        createCollisionEffect(ballX + ballSize/2, ballY + ballSize/2, '#9c27b0');
+        
+        // 壁を光らせる
+        wall.element.style.boxShadow = '0 0 20px rgba(156, 39, 176, 0.9)';
+        setTimeout(() => {
+          wall.element.style.boxShadow = '0 0 15px rgba(156, 39, 176, 0.7)';
+        }, 100);
       }
     });
+  }
+  
+  // 衝突エフェクトを作成
+  function createCollisionEffect(x, y, color) {
+    // パーティクルを作成
+    for (let i = 0; i < 8; i++) {
+      createParticle(x, y, color);
+    }
   }
 
   // バンパーとの衝突判定
@@ -294,9 +438,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // バンパーを一時的に大きくする（視覚効果）
         bumper.element.style.transform = "scale(1.2)";
+        bumper.element.style.boxShadow = "0 0 25px rgba(63, 81, 181, 0.9)";
         setTimeout(() => {
           bumper.element.style.transform = "scale(1)";
+          bumper.element.style.boxShadow = "0 0 15px rgba(63, 81, 181, 0.7)";
         }, 100);
+        
+        // 衝突エフェクト
+        createCollisionEffect(ballCenterX, ballCenterY, '#3f51b5');
       }
     });
   }
@@ -327,6 +476,15 @@ document.addEventListener('DOMContentLoaded', function() {
       // スコア加算
       score += 10;
       scoreElement.textContent = score;
+      
+      // パドルを一時的に光らせる
+      paddle.style.boxShadow = "0 0 25px rgba(76, 175, 80, 0.9)";
+      setTimeout(() => {
+        paddle.style.boxShadow = "0 0 15px rgba(76, 175, 80, 0.7)";
+      }, 100);
+      
+      // 衝突エフェクト
+      createCollisionEffect(ballX + ballSize/2, paddleY, '#4CAF50');
     }
   }
 
@@ -369,6 +527,17 @@ document.addEventListener('DOMContentLoaded', function() {
       // ボールに初速を与える
       ballSpeedX = Math.random() * 6 - 3;
       ballSpeedY = -10;
+      
+      // スタートエフェクト
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+          createParticle(
+            ballX + ballSize / 2, 
+            ballY + ballSize / 2, 
+            '#ff5722'
+          );
+        }, i * 50);
+      }
 
       // ゲームループを開始
       gameLoop();
@@ -396,10 +565,35 @@ document.addEventListener('DOMContentLoaded', function() {
       gameRunning = true;
       ballSpeedX = Math.random() * 6 - 3;
       ballSpeedY = -10;
+      
+      // スタートエフェクト
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+          createParticle(
+            ballX + ballSize / 2, 
+            ballY + ballSize / 2, 
+            '#ff5722'
+          );
+        }, i * 50);
+      }
+      
       gameLoop();
     }
   });
 
   // ゲームを初期化
   initGame();
+  
+  // 初期エフェクト
+  setTimeout(() => {
+    for (let i = 0; i < 30; i++) {
+      setTimeout(() => {
+        const x = Math.random() * gameArea.clientWidth;
+        const y = Math.random() * gameArea.clientHeight;
+        const colors = ['#ff5722', '#4CAF50', '#3f51b5', '#9c27b0'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        createParticle(x, y, color);
+      }, i * 100);
+    }
+  }, 500);
 });
